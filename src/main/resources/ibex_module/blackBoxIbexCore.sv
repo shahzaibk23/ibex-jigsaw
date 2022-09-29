@@ -1,4 +1,4 @@
-module blackBoxIbexCore
+module BlackBoxIbexCore
     #(
         parameter MHPM_COUNTER_NUM = 0,
         parameter MHPM_COUNTER_WIDTH = 0,
