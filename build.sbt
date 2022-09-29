@@ -4,7 +4,7 @@ ThisBuild / organization     := "merledu"
 
 val chiselVersion = "3.5.1"
 
-val circt = project in file("chisel-circt")
+lazy val circt = project in file("chisel-circt")
 
 lazy val root = (project in file("."))
   .settings(
