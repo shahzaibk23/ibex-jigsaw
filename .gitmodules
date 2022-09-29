@@ -1,3 +1,6 @@
 [submodule "src/main/resources/ibex_module/ibex"]
 	path = src/main/resources/ibex_module/ibex
 	url = https://github.com/lowRISC/ibex
+[submodule "chisel-circt"]
+	path = chisel-circt
+	url = https://github.com/shahzaibk23/chisel-circt
