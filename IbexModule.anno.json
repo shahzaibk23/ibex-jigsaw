@@ -1,0 +1,15 @@
+[
+  {
+    "class":"firrtl.EmitCircuitAnnotation",
+    "emitter":"firrtl.SystemVerilogEmitter"
+  },
+  {
+    "class":"firrtl.transforms.BlackBoxPathAnno",
+    "target":"IbexModule.BlackBoxIbexCore",
+    "path":"/Users/shahzaibkashif/ibex-jigsaw/src/main/resources/ibex_module/blackBoxIbexCore.preprocessed.sv"
+  },
+  {
+    "class":"firrtl.transforms.BlackBoxTargetDirAnno",
+    "targetDir":"."
+  }
+]
