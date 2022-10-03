@@ -1,38 +1,38 @@
 [
   {
     "class":"firrtl.transforms.DedupedResult",
-    "original":"~IbexJigsaw|WishboneHost",
-    "duplicate":"~IbexJigsaw|IbexJigsaw/instr_adapter:WishboneAdapter/wbHost:WishboneHost",
+    "original":"~IbexJigsaw|TilelinkHost",
+    "duplicate":"~IbexJigsaw|IbexJigsaw/instr_adapter:TilelinkAdapter/tlHost:TilelinkHost",
     "index":0.0
   },
   {
     "class":"firrtl.transforms.DedupedResult",
-    "original":"~IbexJigsaw|WishboneDevice",
-    "duplicate":"~IbexJigsaw|IbexJigsaw/instr_adapter:WishboneAdapter/wbSlave:WishboneDevice",
+    "original":"~IbexJigsaw|TilelinkDevice",
+    "duplicate":"~IbexJigsaw|IbexJigsaw/instr_adapter:TilelinkAdapter/tlSlave:TilelinkDevice",
     "index":0.1111111111111111
   },
   {
     "class":"firrtl.transforms.DedupedResult",
-    "original":"~IbexJigsaw|WishboneAdapter",
-    "duplicate":"~IbexJigsaw|IbexJigsaw/instr_adapter:WishboneAdapter",
+    "original":"~IbexJigsaw|TilelinkAdapter",
+    "duplicate":"~IbexJigsaw|IbexJigsaw/instr_adapter:TilelinkAdapter",
     "index":0.2222222222222222
   },
   {
     "class":"firrtl.transforms.DedupedResult",
-    "original":"~IbexJigsaw|WishboneHost_1",
-    "duplicate":"~IbexJigsaw|IbexJigsaw/data_adapter:WishboneAdapter/wbHost:WishboneHost",
+    "original":"~IbexJigsaw|TilelinkHost_1",
+    "duplicate":"~IbexJigsaw|IbexJigsaw/data_adapter:TilelinkAdapter/tlHost:TilelinkHost",
     "index":0.3333333333333333
   },
   {
     "class":"firrtl.transforms.DedupedResult",
-    "original":"~IbexJigsaw|WishboneDevice_1",
-    "duplicate":"~IbexJigsaw|IbexJigsaw/data_adapter:WishboneAdapter/wbSlave:WishboneDevice",
+    "original":"~IbexJigsaw|TilelinkDevice_1",
+    "duplicate":"~IbexJigsaw|IbexJigsaw/data_adapter:TilelinkAdapter/tlSlave:TilelinkDevice",
     "index":0.4444444444444444
   },
   {
     "class":"firrtl.transforms.DedupedResult",
-    "original":"~IbexJigsaw|WishboneAdapter_1",
-    "duplicate":"~IbexJigsaw|IbexJigsaw/data_adapter:WishboneAdapter",
+    "original":"~IbexJigsaw|TilelinkAdapter_1",
+    "duplicate":"~IbexJigsaw|IbexJigsaw/data_adapter:TilelinkAdapter",
     "index":0.5555555555555556
   },
   {
@@ -42,7 +42,7 @@
   {
     "class":"firrtl.transforms.BlackBoxPathAnno",
     "target":"IbexJigsaw.BlackBoxIbexCore",
-    "path":"/Users/shahzaibkashif/ibex-jigsaw/src/main/resources/ibex_module/ibex/rtl/ibex_top.sv"
+    "path":"/Users/shahzaibkashif/ibex-jigsaw/src/main/resources/ibex_module/BlackBoxIbexCore.preprocessed.sv"
   },
   {
     "class":"firrtl.annotations.LoadMemoryAnnotation",
@@ -53,35 +53,19 @@
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/data_adapter:WishboneAdapter/wbSlave:WishboneDevice>io_wbSlaveTransmitter_ready"
+    "target":"~IbexJigsaw|IbexJigsaw/data_adapter:TilelinkAdapter/tlHost:TilelinkHost>io_reqIn_valid"
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/data_adapter:WishboneAdapter/wbSlave:WishboneDevice>io_wbMasterReceiver_ready"
+    "target":"~IbexJigsaw|IbexJigsaw/data_adapter:TilelinkAdapter/tlHost:TilelinkHost>stateReg"
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/data_adapter:WishboneAdapter/wbHost:WishboneHost>io_wbSlaveReceiver_ready"
+    "target":"~IbexJigsaw|IbexJigsaw/instr_adapter:TilelinkAdapter/tlHost:TilelinkHost>io_reqIn_valid"
   },
   {
     "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/data_adapter:WishboneAdapter/wbHost:WishboneHost>io_wbMasterTransmitter_ready"
-  },
-  {
-    "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/instr_adapter:WishboneAdapter/wbSlave:WishboneDevice>io_wbSlaveTransmitter_ready"
-  },
-  {
-    "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/instr_adapter:WishboneAdapter/wbSlave:WishboneDevice>io_wbMasterReceiver_ready"
-  },
-  {
-    "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/instr_adapter:WishboneAdapter/wbHost:WishboneHost>io_wbSlaveReceiver_ready"
-  },
-  {
-    "class":"firrtl.transforms.DontTouchAnnotation",
-    "target":"~IbexJigsaw|IbexJigsaw/instr_adapter:WishboneAdapter/wbHost:WishboneHost>io_wbMasterTransmitter_ready"
+    "target":"~IbexJigsaw|IbexJigsaw/instr_adapter:TilelinkAdapter/tlHost:TilelinkHost>stateReg"
   },
   {
     "class":"firrtl.transforms.BlackBoxTargetDirAnno",
