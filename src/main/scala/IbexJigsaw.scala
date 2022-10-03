@@ -5,7 +5,8 @@ import chisel3.util._
 import chisel3.experimental._
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
-import caravan.bus.wishbone.{WishboneConfig, WishboneAdapter}
+import caravan.bus.tilelink.{TilelinkConfig, TilelinkAdapter}
+
 import jigsaw.rams.fpga.BlockRam
 
 class IbexJigsaw(programFile:Option[String]) extends Module{
@@ -13,10 +14,10 @@ class IbexJigsaw(programFile:Option[String]) extends Module{
         val pin = Output(Bool())
     })
 
-    implicit val config: WishboneConfig = WishboneConfig(32,32)
+    implicit val config: TilelinkConfig = TilelinkConfig()
 
-    val instr_adapter = Module(new WishboneAdapter)
-    val data_adapter = Module(new WishboneAdapter)
+    val instr_adapter = Module(new TilelinkAdapter)
+    val data_adapter = Module(new TilelinkAdapter)
 
     val instr_mem = Module(BlockRam.createNonMaskableRAM(programFile, bus=config, rows=1024))
     val data_mem  = Module(BlockRam.createMaskableRAM(bus=config, rows=1024))
@@ -30,21 +31,25 @@ class IbexJigsaw(programFile:Option[String]) extends Module{
 
     val coreParams = IbexCoreParams()
     val ibex = Module(new BlackBoxIbexCore(coreParams))
+
+    val clk = WireInit(clock.asUInt()(0))
+    val rst = WireInit(reset.asUInt()(0))
+
     ibex.io.clk_i := clock
-    ibex.io.rst_ni := reset
-    ibex.io.test_en_i := false.B
-    ibex.io.hart_id_i := 0.U
+    ibex.io.rst_ni := ~rst
+    ibex.io.test_en_i := true.B
+    ibex.io.hart_id_i := "hF14".U
 
 
     instr_adapter.io.reqIn.valid := ibex.io.instr_req_o
-    instr_adapter.io.reqIn.bits.addrRequest := ibex.io.instr_addr_o
+    instr_adapter.io.reqIn.bits.addrRequest := ibex.io.instr_addr_o(31,2)
     instr_adapter.io.reqIn.bits.isWrite := false.B
     instr_adapter.io.reqIn.bits.activeByteLane := 0.U
     instr_adapter.io.reqIn.bits.dataRequest := 0.U
     ibex.io.instr_gnt_i := instr_adapter.io.reqIn.ready
     ibex.io.instr_rvalid_i := instr_adapter.io.rspOut.valid
     ibex.io.instr_rdata_i := instr_adapter.io.rspOut.bits.dataResponse
-    ibex.io.instr_rdata_intg_i := 0.U
+    // ibex.io.instr_rdata_intg_i := 0.U
     ibex.io.instr_err_i := instr_adapter.io.rspOut.bits.error
     instr_adapter.io.rspOut.ready := true.B
 
@@ -58,7 +63,7 @@ class IbexJigsaw(programFile:Option[String]) extends Module{
     ibex.io.data_gnt_i := data_adapter.io.reqIn.ready
     ibex.io.data_rvalid_i := data_adapter.io.rspOut.valid
     ibex.io.data_rdata_i := data_adapter.io.rspOut.bits.dataResponse
-    ibex.io.data_rdata_intg_i := 0.U
+    // ibex.io.data_rdata_intg_i := 0.U
     ibex.io.data_err_i := data_adapter.io.rspOut.bits.error
     data_adapter.io.rspOut.ready := true.B
 
