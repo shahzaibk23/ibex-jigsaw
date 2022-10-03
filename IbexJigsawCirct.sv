@@ -131,59 +131,34 @@ module mem_combMem(	// BlockRam.scala:82:24
   assign R0_data = _GEN ? Memory[_GEN_0] : 32'bx;	// BlockRam.scala:82:24
 endmodule
 
-module WishboneHost(
+module TilelinkHost(
   input         clock,
                 reset,
-                io_wbSlaveReceiver_bits_ack,
-  input  [31:0] io_wbSlaveReceiver_bits_dat,
-  input         io_wbSlaveReceiver_bits_err,
-                io_reqIn_valid,
+                io_tlSlaveReceiver_valid,
+                io_tlSlaveReceiver_bits_d_denied,
+  input  [31:0] io_tlSlaveReceiver_bits_d_data,
+  input         io_reqIn_valid,
   input  [31:0] io_reqIn_bits_addrRequest,
-  output        io_wbMasterTransmitter_valid,
-                io_wbMasterTransmitter_bits_cyc,
-                io_wbMasterTransmitter_bits_stb,
-  output [31:0] io_wbMasterTransmitter_bits_adr,
+  output        io_tlMasterTransmitter_valid,
+  output [2:0]  io_tlMasterTransmitter_bits_a_opcode,
+  output [31:0] io_tlMasterTransmitter_bits_a_address,
   output        io_reqIn_ready,
                 io_rspOut_valid,
   output [31:0] io_rspOut_bits_dataResponse,
   output        io_rspOut_bits_error);
 
-  reg         startWBTransaction;	// WishboneHost.scala:39:35
-  reg  [31:0] dataReg;	// WishboneHost.scala:41:24
-  reg         respReg;	// WishboneHost.scala:42:24
-  reg         errReg;	// WishboneHost.scala:43:23
-  reg         stbReg;	// WishboneHost.scala:46:23
-  reg         cycReg;	// WishboneHost.scala:47:23
-  reg  [31:0] adrReg;	// WishboneHost.scala:50:23
-  reg         stateReg;	// WishboneHost.scala:56:25
-  reg         readyReg;	// WishboneHost.scala:62:25
-  wire        _GEN = startWBTransaction & stbReg;	// WishboneHost.scala:39:35, :46:23, :95:37, :102:31, :103:118
+  reg         stateReg;	// TilelinkHost.scala:19:27
+  reg  [31:0] addrReg;	// TilelinkHost.scala:20:27
+  wire [31:0] _GEN = stateReg | ~io_reqIn_valid ? addrReg : io_reqIn_bits_addrRequest;	// TilelinkHost.scala:19:27, :20:27, :42:45, :56:28, :60:29
+  wire        _GEN_0 = stateReg & io_tlSlaveReceiver_valid;	// TilelinkHost.scala:19:27, :50:45, :56:28, :84:43
   always @(posedge clock) begin
     if (reset) begin
-      startWBTransaction <= 1'h0;	// WishboneHost.scala:39:35
-      dataReg <= 32'h0;	// WishboneHost.scala:41:24
-      respReg <= 1'h0;	// WishboneHost.scala:42:24
-      errReg <= 1'h0;	// WishboneHost.scala:43:23
-      stbReg <= 1'h0;	// WishboneHost.scala:46:23
-      cycReg <= 1'h0;	// WishboneHost.scala:47:23
-      adrReg <= 32'h0;	// WishboneHost.scala:50:23
-      stateReg <= 1'h0;	// WishboneHost.scala:56:25
-      readyReg <= 1'h1;	// WishboneHost.scala:62:25
+      stateReg <= 1'h0;	// TilelinkHost.scala:19:27
+      addrReg <= 32'h0;	// TilelinkHost.scala:20:27
     end
     else begin
-      automatic logic _T_7;	// WishboneHost.scala:77:67
-      automatic logic _T_14 = io_wbSlaveReceiver_bits_ack & ~io_wbSlaveReceiver_bits_err;	// WishboneHost.scala:106:{38,41}
-      automatic logic _T_16 = io_wbSlaveReceiver_bits_err & ~io_wbSlaveReceiver_bits_ack;	// WishboneHost.scala:112:{45,48}
-      _T_7 = readyReg & io_reqIn_valid;	// WishboneHost.scala:62:25, :77:67
-      startWBTransaction <= ~_T_14 & ~_T_16 & (_T_7 | startWBTransaction);	// WishboneHost.scala:39:35, :77:{67,86}, :78:26, :85:92, :106:{38,71}, :109:14, :111:26, :112:{45,78}, :116:26
-      dataReg <= _T_14 | _T_16 ? io_wbSlaveReceiver_bits_dat : dataReg;	// WishboneHost.scala:41:24, :106:{38,71}, :107:15, :112:{45,78}
-      respReg <= (~stateReg | ~stateReg) & (_T_14 | _T_16 | respReg);	// WishboneHost.scala:42:24, :56:25, :106:{38,71}, :108:15, :112:{45,78}, :119:29, :121:42, :122:15
-      errReg <= ~_T_14 & (_T_16 | errReg);	// WishboneHost.scala:43:23, :106:{38,71}, :109:14, :112:{45,78}, :115:14
-      stbReg <= _T_7 | stbReg;	// WishboneHost.scala:46:23, :77:{67,86}, :79:14, :85:92
-      cycReg <= _T_7 | cycReg;	// WishboneHost.scala:47:23, :77:{67,86}, :80:14, :85:92
-      adrReg <= _T_7 ? io_reqIn_bits_addrRequest : adrReg;	// WishboneHost.scala:50:23, :77:{67,86}, :82:14, :85:92
-      stateReg <= ~stateReg & (io_wbSlaveReceiver_bits_ack | io_wbSlaveReceiver_bits_err);	// WishboneHost.scala:56:25, :119:{19,29}, :120:{16,51}, :121:42
-      readyReg <= stateReg | ~io_reqIn_valid & readyReg;	// WishboneHost.scala:56:25, :62:25, :63:14, :64:14, :66:33, :67:14
+      stateReg <= stateReg ? (~stateReg | ~io_tlSlaveReceiver_valid) & stateReg : io_reqIn_valid | stateReg;	// TilelinkHost.scala:19:27, :33:33, :56:28, :60:29, :77:22, :84:43, :87:34, :89:39, :95:22
+      addrReg <= _GEN;	// TilelinkHost.scala:20:27, :42:45, :56:28, :60:29
     end
   end // always @(posedge)
   `ifndef SYNTHESIS
@@ -193,65 +168,81 @@ module WishboneHost(
     initial begin
       automatic logic [31:0] _RANDOM_0;
       automatic logic [31:0] _RANDOM_1;
-      automatic logic [31:0] _RANDOM_2;
-      automatic logic [31:0] _RANDOM_3;
       `ifdef INIT_RANDOM_PROLOG_
         `INIT_RANDOM_PROLOG_
       `endif
       `ifdef RANDOMIZE_REG_INIT
         _RANDOM_0 = `RANDOM;
         _RANDOM_1 = `RANDOM;
-        _RANDOM_2 = `RANDOM;
-        _RANDOM_3 = `RANDOM;
-        startWBTransaction = _RANDOM_0[0];	// WishboneHost.scala:39:35
-        dataReg = {_RANDOM_0[31:1], _RANDOM_1[0]};	// WishboneHost.scala:39:35, :41:24
-        respReg = _RANDOM_1[1];	// WishboneHost.scala:41:24, :42:24
-        errReg = _RANDOM_1[2];	// WishboneHost.scala:41:24, :43:23
-        stbReg = _RANDOM_1[4];	// WishboneHost.scala:41:24, :46:23
-        cycReg = _RANDOM_1[5];	// WishboneHost.scala:41:24, :47:23
-        adrReg = {_RANDOM_2[31:7], _RANDOM_3[6:0]};	// WishboneHost.scala:50:23
-        stateReg = _RANDOM_3[11];	// WishboneHost.scala:50:23, :56:25
-        readyReg = _RANDOM_3[12];	// WishboneHost.scala:50:23, :62:25
+        stateReg = _RANDOM_0[0];	// TilelinkHost.scala:19:27
+        addrReg = {_RANDOM_0[31:1], _RANDOM_1[0]};	// TilelinkHost.scala:19:27, :20:27
       `endif
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL
       `FIRRTL_AFTER_INITIAL
     `endif
   `endif
-  assign io_wbMasterTransmitter_valid = _GEN;	// WishboneHost.scala:95:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_cyc = startWBTransaction & cycReg;	// WishboneHost.scala:39:35, :47:23, :96:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_stb = _GEN;	// WishboneHost.scala:95:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_adr = startWBTransaction ? adrReg : 32'h0;	// WishboneHost.scala:39:35, :50:23, :98:37, :102:31, :103:118
-  assign io_reqIn_ready = readyReg;	// WishboneHost.scala:62:25
-  assign io_rspOut_valid = respReg;	// WishboneHost.scala:42:24
-  assign io_rspOut_bits_dataResponse = dataReg;	// WishboneHost.scala:41:24
-  assign io_rspOut_bits_error = errReg;	// WishboneHost.scala:43:23
+  assign io_tlMasterTransmitter_valid = ~stateReg & io_reqIn_valid;	// TilelinkHost.scala:19:27, :48:45, :56:{19,28}, :60:29
+  assign io_tlMasterTransmitter_bits_a_opcode = stateReg ? 3'h0 : {io_reqIn_valid, 2'h0};	// TilelinkHost.scala:19:27, :40:45, :56:28, :60:29, :62:53
+  assign io_tlMasterTransmitter_bits_a_address = _GEN;	// TilelinkHost.scala:42:45, :56:28, :60:29
+  assign io_reqIn_ready = ~stateReg | ~stateReg;	// TilelinkHost.scala:19:27, :33:33, :56:{19,28}, :84:43, :87:34
+  assign io_rspOut_valid = _GEN_0;	// TilelinkHost.scala:50:45, :56:28, :84:43
+  assign io_rspOut_bits_dataResponse = _GEN_0 ? io_tlSlaveReceiver_bits_d_data : 32'h0;	// TilelinkHost.scala:50:45, :56:28, :84:43
+  assign io_rspOut_bits_error = stateReg & io_tlSlaveReceiver_valid & io_tlSlaveReceiver_bits_d_denied;	// TilelinkHost.scala:19:27, :51:45, :56:28, :84:43
 endmodule
 
-module WishboneDevice(
-  input         io_wbMasterReceiver_valid,
-                io_wbMasterReceiver_bits_cyc,
-                io_wbMasterReceiver_bits_stb,
-  input  [31:0] io_wbMasterReceiver_bits_adr,
+module TilelinkDevice(
+  input         clock,
+                reset,
+                io_tlMasterReceiver_valid,
+  input  [2:0]  io_tlMasterReceiver_bits_a_opcode,
+  input  [31:0] io_tlMasterReceiver_bits_a_address,
   input         io_rspIn_valid,
   input  [31:0] io_rspIn_bits_dataResponse,
   input         io_rspIn_bits_error,
-  output        io_wbSlaveTransmitter_bits_ack,
-  output [31:0] io_wbSlaveTransmitter_bits_dat,
-  output        io_wbSlaveTransmitter_bits_err,
-                io_reqOut_valid,
-  output [31:0] io_reqOut_bits_addrRequest);
+  output        io_tlSlaveTransmitter_valid,
+                io_tlSlaveTransmitter_bits_d_denied,
+  output [31:0] io_tlSlaveTransmitter_bits_d_data,
+  output        io_reqOut_valid,
+  output [31:0] io_reqOut_bits_addrRequest,
+  output        io_reqOut_bits_isWrite);
 
-  wire _T_1 = io_wbMasterReceiver_valid & io_wbMasterReceiver_bits_cyc & io_wbMasterReceiver_bits_stb;	// WishboneDevice.scala:16:80
-  wire _T_4 = io_rspIn_valid & ~io_rspIn_bits_error;	// WishboneDevice.scala:36:{27,30}
-  assign io_wbSlaveTransmitter_bits_ack = _T_1 & _T_4;	// WishboneDevice.scala:16:80, :25:16, :26:40, :36:27, :88:9
-  assign io_wbSlaveTransmitter_bits_dat = io_rspIn_bits_dataResponse;
-  assign io_wbSlaveTransmitter_bits_err = _T_1 & ~_T_4 & io_rspIn_valid & io_rspIn_bits_error;	// WishboneDevice.scala:16:80, :25:16, :26:40, :36:{27,52}, :40:40, :42:58, :89:36
-  assign io_reqOut_valid = _T_1;	// WishboneDevice.scala:16:80
-  assign io_reqOut_bits_addrRequest = io_wbMasterReceiver_bits_adr;
+  reg  stateReg;	// TilelinkDevice.scala:17:27
+  wire _GEN = stateReg & io_rspIn_valid;	// TilelinkDevice.scala:17:27, :30:45, :41:28, :56:43
+  always @(posedge clock) begin
+    if (reset)
+      stateReg <= 1'h0;	// TilelinkDevice.scala:17:27
+    else
+      stateReg <= stateReg ? (~stateReg | ~io_rspIn_valid) & stateReg : io_tlMasterReceiver_valid | stateReg;	// TilelinkDevice.scala:17:27, :41:28, :43:40, :51:22, :56:43, :60:29, :72:22
+  end // always @(posedge)
+  `ifndef SYNTHESIS
+    `ifdef FIRRTL_BEFORE_INITIAL
+      `FIRRTL_BEFORE_INITIAL
+    `endif
+    initial begin
+      automatic logic [31:0] _RANDOM_0;
+      `ifdef INIT_RANDOM_PROLOG_
+        `INIT_RANDOM_PROLOG_
+      `endif
+      `ifdef RANDOMIZE_REG_INIT
+        _RANDOM_0 = `RANDOM;
+        stateReg = _RANDOM_0[0];	// TilelinkDevice.scala:17:27
+      `endif
+    end // initial
+    `ifdef FIRRTL_AFTER_INITIAL
+      `FIRRTL_AFTER_INITIAL
+    `endif
+  `endif
+  assign io_tlSlaveTransmitter_valid = _GEN;	// TilelinkDevice.scala:30:45, :41:28, :56:43
+  assign io_tlSlaveTransmitter_bits_d_denied = stateReg & io_rspIn_valid & io_rspIn_bits_error;	// TilelinkDevice.scala:17:27, :35:45, :41:28, :56:43
+  assign io_tlSlaveTransmitter_bits_d_data = _GEN ? io_rspIn_bits_dataResponse : 32'h0;	// TilelinkDevice.scala:30:45, :41:28, :56:43
+  assign io_reqOut_valid = ~stateReg & io_tlMasterReceiver_valid;	// TilelinkDevice.scala:17:27, :27:37, :41:{19,28}, :43:40
+  assign io_reqOut_bits_addrRequest = stateReg | ~io_tlMasterReceiver_valid ? 32'h0 : io_tlMasterReceiver_bits_a_address;	// TilelinkDevice.scala:17:27, :23:37, :41:28, :43:40
+  assign io_reqOut_bits_isWrite = ~stateReg & io_tlMasterReceiver_valid & (io_tlMasterReceiver_bits_a_opcode == 3'h0 |
+                io_tlMasterReceiver_bits_a_opcode == 3'h1);	// TilelinkDevice.scala:17:27, :26:37, :41:{19,28}, :43:40, :48:{73,91,128}
 endmodule
 
-module WishboneAdapter(
+module TilelinkAdapter(
   input         clock,
                 reset,
                 io_reqIn_valid,
@@ -264,113 +255,81 @@ module WishboneAdapter(
   output [31:0] io_rspOut_bits_dataResponse,
   output        io_rspOut_bits_error,
                 io_reqOut_valid,
-  output [31:0] io_reqOut_bits_addrRequest);
+  output [31:0] io_reqOut_bits_addrRequest,
+  output        io_reqOut_bits_isWrite);
 
-  wire        _wbSlave_io_wbSlaveTransmitter_bits_ack;	// WishboneAdapter.scala:20:25
-  wire [31:0] _wbSlave_io_wbSlaveTransmitter_bits_dat;	// WishboneAdapter.scala:20:25
-  wire        _wbSlave_io_wbSlaveTransmitter_bits_err;	// WishboneAdapter.scala:20:25
-  wire        _wbHost_io_wbMasterTransmitter_valid;	// WishboneAdapter.scala:19:24
-  wire        _wbHost_io_wbMasterTransmitter_bits_cyc;	// WishboneAdapter.scala:19:24
-  wire        _wbHost_io_wbMasterTransmitter_bits_stb;	// WishboneAdapter.scala:19:24
-  wire [31:0] _wbHost_io_wbMasterTransmitter_bits_adr;	// WishboneAdapter.scala:19:24
-  WishboneHost wbHost (	// WishboneAdapter.scala:19:24
-    .clock                           (clock),
-    .reset                           (reset),
-    .io_wbSlaveReceiver_bits_ack     (_wbSlave_io_wbSlaveTransmitter_bits_ack),	// WishboneAdapter.scala:20:25
-    .io_wbSlaveReceiver_bits_dat     (_wbSlave_io_wbSlaveTransmitter_bits_dat),	// WishboneAdapter.scala:20:25
-    .io_wbSlaveReceiver_bits_err     (_wbSlave_io_wbSlaveTransmitter_bits_err),	// WishboneAdapter.scala:20:25
-    .io_reqIn_valid                  (io_reqIn_valid),
-    .io_reqIn_bits_addrRequest       (io_reqIn_bits_addrRequest),
-    .io_wbMasterTransmitter_valid    (_wbHost_io_wbMasterTransmitter_valid),
-    .io_wbMasterTransmitter_bits_cyc (_wbHost_io_wbMasterTransmitter_bits_cyc),
-    .io_wbMasterTransmitter_bits_stb (_wbHost_io_wbMasterTransmitter_bits_stb),
-    .io_wbMasterTransmitter_bits_adr (_wbHost_io_wbMasterTransmitter_bits_adr),
-    .io_reqIn_ready                  (io_reqIn_ready),
-    .io_rspOut_valid                 (io_rspOut_valid),
-    .io_rspOut_bits_dataResponse     (io_rspOut_bits_dataResponse),
-    .io_rspOut_bits_error            (io_rspOut_bits_error)
+  wire        _tlSlave_io_tlSlaveTransmitter_valid;	// TilelinkAdapter.scala:19:25
+  wire        _tlSlave_io_tlSlaveTransmitter_bits_d_denied;	// TilelinkAdapter.scala:19:25
+  wire [31:0] _tlSlave_io_tlSlaveTransmitter_bits_d_data;	// TilelinkAdapter.scala:19:25
+  wire        _tlHost_io_tlMasterTransmitter_valid;	// TilelinkAdapter.scala:18:24
+  wire [2:0]  _tlHost_io_tlMasterTransmitter_bits_a_opcode;	// TilelinkAdapter.scala:18:24
+  wire [31:0] _tlHost_io_tlMasterTransmitter_bits_a_address;	// TilelinkAdapter.scala:18:24
+  TilelinkHost tlHost (	// TilelinkAdapter.scala:18:24
+    .clock                                 (clock),
+    .reset                                 (reset),
+    .io_tlSlaveReceiver_valid              (_tlSlave_io_tlSlaveTransmitter_valid),	// TilelinkAdapter.scala:19:25
+    .io_tlSlaveReceiver_bits_d_denied      (_tlSlave_io_tlSlaveTransmitter_bits_d_denied),	// TilelinkAdapter.scala:19:25
+    .io_tlSlaveReceiver_bits_d_data        (_tlSlave_io_tlSlaveTransmitter_bits_d_data),	// TilelinkAdapter.scala:19:25
+    .io_reqIn_valid                        (io_reqIn_valid),
+    .io_reqIn_bits_addrRequest             (io_reqIn_bits_addrRequest),
+    .io_tlMasterTransmitter_valid          (_tlHost_io_tlMasterTransmitter_valid),
+    .io_tlMasterTransmitter_bits_a_opcode  (_tlHost_io_tlMasterTransmitter_bits_a_opcode),
+    .io_tlMasterTransmitter_bits_a_address (_tlHost_io_tlMasterTransmitter_bits_a_address),
+    .io_reqIn_ready                        (io_reqIn_ready),
+    .io_rspOut_valid                       (io_rspOut_valid),
+    .io_rspOut_bits_dataResponse           (io_rspOut_bits_dataResponse),
+    .io_rspOut_bits_error                  (io_rspOut_bits_error)
   );
-  WishboneDevice wbSlave (	// WishboneAdapter.scala:20:25
-    .io_wbMasterReceiver_valid      (_wbHost_io_wbMasterTransmitter_valid),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_cyc   (_wbHost_io_wbMasterTransmitter_bits_cyc),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_stb   (_wbHost_io_wbMasterTransmitter_bits_stb),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_adr   (_wbHost_io_wbMasterTransmitter_bits_adr),	// WishboneAdapter.scala:19:24
-    .io_rspIn_valid                 (io_rspIn_valid),
-    .io_rspIn_bits_dataResponse     (io_rspIn_bits_dataResponse),
-    .io_rspIn_bits_error            (io_rspIn_bits_error),
-    .io_wbSlaveTransmitter_bits_ack (_wbSlave_io_wbSlaveTransmitter_bits_ack),
-    .io_wbSlaveTransmitter_bits_dat (_wbSlave_io_wbSlaveTransmitter_bits_dat),
-    .io_wbSlaveTransmitter_bits_err (_wbSlave_io_wbSlaveTransmitter_bits_err),
-    .io_reqOut_valid                (io_reqOut_valid),
-    .io_reqOut_bits_addrRequest     (io_reqOut_bits_addrRequest)
+  TilelinkDevice tlSlave (	// TilelinkAdapter.scala:19:25
+    .clock                               (clock),
+    .reset                               (reset),
+    .io_tlMasterReceiver_valid           (_tlHost_io_tlMasterTransmitter_valid),	// TilelinkAdapter.scala:18:24
+    .io_tlMasterReceiver_bits_a_opcode   (_tlHost_io_tlMasterTransmitter_bits_a_opcode),	// TilelinkAdapter.scala:18:24
+    .io_tlMasterReceiver_bits_a_address  (_tlHost_io_tlMasterTransmitter_bits_a_address),	// TilelinkAdapter.scala:18:24
+    .io_rspIn_valid                      (io_rspIn_valid),
+    .io_rspIn_bits_dataResponse          (io_rspIn_bits_dataResponse),
+    .io_rspIn_bits_error                 (io_rspIn_bits_error),
+    .io_tlSlaveTransmitter_valid         (_tlSlave_io_tlSlaveTransmitter_valid),
+    .io_tlSlaveTransmitter_bits_d_denied (_tlSlave_io_tlSlaveTransmitter_bits_d_denied),
+    .io_tlSlaveTransmitter_bits_d_data   (_tlSlave_io_tlSlaveTransmitter_bits_d_data),
+    .io_reqOut_valid                     (io_reqOut_valid),
+    .io_reqOut_bits_addrRequest          (io_reqOut_bits_addrRequest),
+    .io_reqOut_bits_isWrite              (io_reqOut_bits_isWrite)
   );
 endmodule
 
-module WishboneHost_1(
+module TilelinkHost_1(
   input         clock,
                 reset,
-                io_wbSlaveReceiver_bits_ack,
-  input  [31:0] io_wbSlaveReceiver_bits_dat,
+                io_tlSlaveReceiver_valid,
+  input  [31:0] io_tlSlaveReceiver_bits_d_data,
   input         io_reqIn_valid,
   input  [31:0] io_reqIn_bits_addrRequest,
                 io_reqIn_bits_dataRequest,
   input  [3:0]  io_reqIn_bits_activeByteLane,
   input         io_reqIn_bits_isWrite,
-  output        io_wbMasterTransmitter_valid,
-                io_wbMasterTransmitter_bits_cyc,
-                io_wbMasterTransmitter_bits_stb,
-                io_wbMasterTransmitter_bits_we,
-  output [31:0] io_wbMasterTransmitter_bits_adr,
-                io_wbMasterTransmitter_bits_dat,
-  output [3:0]  io_wbMasterTransmitter_bits_sel,
+  output        io_tlMasterTransmitter_valid,
+  output [2:0]  io_tlMasterTransmitter_bits_a_opcode,
+  output [31:0] io_tlMasterTransmitter_bits_a_address,
+  output [3:0]  io_tlMasterTransmitter_bits_a_mask,
+  output [31:0] io_tlMasterTransmitter_bits_a_data,
   output        io_reqIn_ready,
                 io_rspOut_valid,
   output [31:0] io_rspOut_bits_dataResponse);
 
-  reg         startWBTransaction;	// WishboneHost.scala:39:35
-  reg  [31:0] dataReg;	// WishboneHost.scala:41:24
-  reg         respReg;	// WishboneHost.scala:42:24
-  reg         stbReg;	// WishboneHost.scala:46:23
-  reg         cycReg;	// WishboneHost.scala:47:23
-  reg         weReg;	// WishboneHost.scala:48:22
-  reg  [31:0] datReg;	// WishboneHost.scala:49:23
-  reg  [31:0] adrReg;	// WishboneHost.scala:50:23
-  reg  [3:0]  selReg;	// WishboneHost.scala:51:23
-  reg         stateReg;	// WishboneHost.scala:56:25
-  reg         readyReg;	// WishboneHost.scala:62:25
-  wire        _GEN = startWBTransaction & stbReg;	// WishboneHost.scala:39:35, :46:23, :95:37, :102:31, :103:118
+  reg         stateReg;	// TilelinkHost.scala:19:27
+  reg  [31:0] addrReg;	// TilelinkHost.scala:20:27
+  wire        _GEN = stateReg | ~io_reqIn_valid;	// TilelinkHost.scala:19:27, :40:45, :56:28, :60:29
+  wire [31:0] _GEN_0 = _GEN ? addrReg : io_reqIn_bits_addrRequest;	// TilelinkHost.scala:20:27, :40:45, :42:45, :56:28, :60:29
+  wire        _GEN_1 = stateReg & io_tlSlaveReceiver_valid;	// TilelinkHost.scala:19:27, :50:45, :56:28, :84:43
   always @(posedge clock) begin
     if (reset) begin
-      startWBTransaction <= 1'h0;	// WishboneHost.scala:39:35
-      dataReg <= 32'h0;	// WishboneHost.scala:41:24
-      respReg <= 1'h0;	// WishboneHost.scala:42:24
-      stbReg <= 1'h0;	// WishboneHost.scala:46:23
-      cycReg <= 1'h0;	// WishboneHost.scala:47:23
-      weReg <= 1'h0;	// WishboneHost.scala:48:22
-      datReg <= 32'h0;	// WishboneHost.scala:41:24, :49:23
-      adrReg <= 32'h0;	// WishboneHost.scala:41:24, :50:23
-      selReg <= 4'h0;	// WishboneHost.scala:51:23, :103:118
-      stateReg <= 1'h0;	// WishboneHost.scala:56:25
-      readyReg <= 1'h1;	// WishboneHost.scala:62:25
+      stateReg <= 1'h0;	// TilelinkHost.scala:19:27
+      addrReg <= 32'h0;	// TilelinkHost.scala:20:27, :41:45
     end
     else begin
-      automatic logic _T_7;	// WishboneHost.scala:77:67
-      automatic logic _T_11;	// WishboneHost.scala:85:73
-      automatic logic _GEN_0;	// WishboneHost.scala:77:86, :81:13, :85:92
-      _T_7 = ~io_reqIn_bits_isWrite & readyReg & io_reqIn_valid;	// WishboneHost.scala:62:25, :77:{32,67}
-      _T_11 = io_reqIn_bits_isWrite & readyReg & io_reqIn_valid;	// WishboneHost.scala:62:25, :85:73
-      _GEN_0 = _T_7 | _T_11;	// WishboneHost.scala:77:{67,86}, :81:13, :85:{73,92}
-      startWBTransaction <= ~io_wbSlaveReceiver_bits_ack & (_T_7 | _T_11 | startWBTransaction);	// WishboneHost.scala:39:35, :77:{67,86}, :78:26, :85:{73,92}, :106:71, :111:26, :112:78
-      dataReg <= io_wbSlaveReceiver_bits_ack ? io_wbSlaveReceiver_bits_dat : dataReg;	// WishboneHost.scala:41:24, :106:71, :107:15, :112:78
-      respReg <= (~stateReg | ~stateReg) & (io_wbSlaveReceiver_bits_ack | respReg);	// WishboneHost.scala:42:24, :56:25, :106:71, :108:15, :112:78, :119:29, :121:42, :122:15
-      stbReg <= _T_7 | _T_11 | stbReg;	// WishboneHost.scala:46:23, :77:{67,86}, :79:14, :85:{73,92}
-      cycReg <= _T_7 | _T_11 | cycReg;	// WishboneHost.scala:47:23, :77:{67,86}, :80:14, :85:{73,92}
-      weReg <= _GEN_0 ? io_reqIn_bits_isWrite : weReg;	// WishboneHost.scala:48:22, :77:86, :81:13, :85:92
-      datReg <= _T_7 ? 32'h0 : _T_11 ? io_reqIn_bits_dataRequest : datReg;	// WishboneHost.scala:41:24, :49:23, :77:{67,86}, :83:14, :85:{73,92}, :91:14
-      adrReg <= _GEN_0 ? io_reqIn_bits_addrRequest : adrReg;	// WishboneHost.scala:50:23, :77:86, :81:13, :82:14, :85:92
-      selReg <= _GEN_0 ? io_reqIn_bits_activeByteLane : selReg;	// WishboneHost.scala:51:23, :77:86, :81:13, :84:14, :85:92
-      stateReg <= ~stateReg & io_wbSlaveReceiver_bits_ack;	// WishboneHost.scala:56:25, :119:{19,29}, :120:16, :121:42
-      readyReg <= stateReg | ~io_reqIn_valid & readyReg;	// WishboneHost.scala:56:25, :62:25, :63:14, :64:14, :66:33, :67:14
+      stateReg <= stateReg ? (~stateReg | ~io_tlSlaveReceiver_valid) & stateReg : io_reqIn_valid | stateReg;	// TilelinkHost.scala:19:27, :33:33, :56:28, :60:29, :77:22, :84:43, :87:34, :89:39, :95:22
+      addrReg <= _GEN_0;	// TilelinkHost.scala:20:27, :42:45, :56:28, :60:29
     end
   end // always @(posedge)
   `ifndef SYNTHESIS
@@ -380,74 +339,86 @@ module WishboneHost_1(
     initial begin
       automatic logic [31:0] _RANDOM_0;
       automatic logic [31:0] _RANDOM_1;
-      automatic logic [31:0] _RANDOM_2;
-      automatic logic [31:0] _RANDOM_3;
       `ifdef INIT_RANDOM_PROLOG_
         `INIT_RANDOM_PROLOG_
       `endif
       `ifdef RANDOMIZE_REG_INIT
         _RANDOM_0 = `RANDOM;
         _RANDOM_1 = `RANDOM;
-        _RANDOM_2 = `RANDOM;
-        _RANDOM_3 = `RANDOM;
-        startWBTransaction = _RANDOM_0[0];	// WishboneHost.scala:39:35
-        dataReg = {_RANDOM_0[31:1], _RANDOM_1[0]};	// WishboneHost.scala:39:35, :41:24
-        respReg = _RANDOM_1[1];	// WishboneHost.scala:41:24, :42:24
-        stbReg = _RANDOM_1[4];	// WishboneHost.scala:41:24, :46:23
-        cycReg = _RANDOM_1[5];	// WishboneHost.scala:41:24, :47:23
-        weReg = _RANDOM_1[6];	// WishboneHost.scala:41:24, :48:22
-        datReg = {_RANDOM_1[31:7], _RANDOM_2[6:0]};	// WishboneHost.scala:41:24, :49:23
-        adrReg = {_RANDOM_2[31:7], _RANDOM_3[6:0]};	// WishboneHost.scala:49:23, :50:23
-        selReg = _RANDOM_3[10:7];	// WishboneHost.scala:50:23, :51:23
-        stateReg = _RANDOM_3[11];	// WishboneHost.scala:50:23, :56:25
-        readyReg = _RANDOM_3[12];	// WishboneHost.scala:50:23, :62:25
+        stateReg = _RANDOM_0[0];	// TilelinkHost.scala:19:27
+        addrReg = {_RANDOM_0[31:1], _RANDOM_1[0]};	// TilelinkHost.scala:19:27, :20:27
       `endif
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL
       `FIRRTL_AFTER_INITIAL
     `endif
   `endif
-  assign io_wbMasterTransmitter_valid = _GEN;	// WishboneHost.scala:95:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_cyc = startWBTransaction & cycReg;	// WishboneHost.scala:39:35, :47:23, :96:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_stb = _GEN;	// WishboneHost.scala:95:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_we = startWBTransaction & weReg;	// WishboneHost.scala:39:35, :48:22, :97:36, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_adr = startWBTransaction ? adrReg : 32'h0;	// WishboneHost.scala:39:35, :41:24, :50:23, :98:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_dat = startWBTransaction ? datReg : 32'h0;	// WishboneHost.scala:39:35, :41:24, :49:23, :99:37, :102:31, :103:118
-  assign io_wbMasterTransmitter_bits_sel = startWBTransaction ? selReg : 4'h0;	// WishboneHost.scala:39:35, :51:23, :100:37, :102:31, :103:118
-  assign io_reqIn_ready = readyReg;	// WishboneHost.scala:62:25
-  assign io_rspOut_valid = respReg;	// WishboneHost.scala:42:24
-  assign io_rspOut_bits_dataResponse = dataReg;	// WishboneHost.scala:41:24
+  assign io_tlMasterTransmitter_valid = ~stateReg & io_reqIn_valid;	// TilelinkHost.scala:19:27, :48:45, :56:{19,28}, :60:29
+  assign io_tlMasterTransmitter_bits_a_opcode = _GEN ? 3'h0 : io_reqIn_bits_isWrite ? {2'h0, io_reqIn_bits_activeByteLane != 4'hF} : 3'h4;	// TilelinkHost.scala:40:45, :56:28, :60:29, :62:{59,116}
+  assign io_tlMasterTransmitter_bits_a_address = _GEN_0;	// TilelinkHost.scala:42:45, :56:28, :60:29
+  assign io_tlMasterTransmitter_bits_a_mask = _GEN ? 4'h0 : io_reqIn_bits_activeByteLane;	// TilelinkHost.scala:40:45, :46:45, :56:28, :60:29
+  assign io_tlMasterTransmitter_bits_a_data = _GEN ? 32'h0 : io_reqIn_bits_dataRequest;	// TilelinkHost.scala:40:45, :41:45, :56:28, :60:29
+  assign io_reqIn_ready = ~stateReg | ~stateReg;	// TilelinkHost.scala:19:27, :33:33, :56:{19,28}, :84:43, :87:34
+  assign io_rspOut_valid = _GEN_1;	// TilelinkHost.scala:50:45, :56:28, :84:43
+  assign io_rspOut_bits_dataResponse = _GEN_1 ? io_tlSlaveReceiver_bits_d_data : 32'h0;	// TilelinkHost.scala:41:45, :50:45, :56:28, :84:43
 endmodule
 
-module WishboneDevice_1(
-  input         io_wbMasterReceiver_valid,
-                io_wbMasterReceiver_bits_cyc,
-                io_wbMasterReceiver_bits_stb,
-                io_wbMasterReceiver_bits_we,
-  input  [31:0] io_wbMasterReceiver_bits_adr,
-                io_wbMasterReceiver_bits_dat,
-  input  [3:0]  io_wbMasterReceiver_bits_sel,
+module TilelinkDevice_1(
+  input         clock,
+                reset,
+                io_tlMasterReceiver_valid,
+  input  [2:0]  io_tlMasterReceiver_bits_a_opcode,
+  input  [31:0] io_tlMasterReceiver_bits_a_address,
+  input  [3:0]  io_tlMasterReceiver_bits_a_mask,
+  input  [31:0] io_tlMasterReceiver_bits_a_data,
   input         io_rspIn_valid,
   input  [31:0] io_rspIn_bits_dataResponse,
-  output        io_wbSlaveTransmitter_bits_ack,
-  output [31:0] io_wbSlaveTransmitter_bits_dat,
+  output        io_tlSlaveTransmitter_valid,
+  output [31:0] io_tlSlaveTransmitter_bits_d_data,
   output        io_reqOut_valid,
   output [31:0] io_reqOut_bits_addrRequest,
                 io_reqOut_bits_dataRequest,
   output [3:0]  io_reqOut_bits_activeByteLane,
   output        io_reqOut_bits_isWrite);
 
-  wire _T_1 = io_wbMasterReceiver_valid & io_wbMasterReceiver_bits_cyc & io_wbMasterReceiver_bits_stb;	// WishboneDevice.scala:16:80
-  assign io_wbSlaveTransmitter_bits_ack = _T_1 & io_rspIn_valid;	// WishboneDevice.scala:16:80, :25:16, :26:40, :88:9
-  assign io_wbSlaveTransmitter_bits_dat = io_wbMasterReceiver_bits_we ? 32'h0 : io_rspIn_bits_dataResponse;	// WishboneDevice.scala:26:40, :36:52, :60:52, :65:58, :69:40, :75:40
-  assign io_reqOut_valid = _T_1;	// WishboneDevice.scala:16:80
-  assign io_reqOut_bits_addrRequest = io_wbMasterReceiver_bits_adr;
-  assign io_reqOut_bits_dataRequest = io_wbMasterReceiver_bits_dat;
-  assign io_reqOut_bits_activeByteLane = io_wbMasterReceiver_bits_sel;
-  assign io_reqOut_bits_isWrite = io_wbMasterReceiver_bits_we;
+  reg  stateReg;	// TilelinkDevice.scala:17:27
+  wire _GEN = stateReg | ~io_tlMasterReceiver_valid;	// TilelinkDevice.scala:17:27, :23:37, :41:28, :43:40
+  wire _GEN_0 = stateReg & io_rspIn_valid;	// TilelinkDevice.scala:17:27, :30:45, :41:28, :56:43
+  always @(posedge clock) begin
+    if (reset)
+      stateReg <= 1'h0;	// TilelinkDevice.scala:17:27
+    else
+      stateReg <= stateReg ? (~stateReg | ~io_rspIn_valid) & stateReg : io_tlMasterReceiver_valid | stateReg;	// TilelinkDevice.scala:17:27, :41:28, :43:40, :51:22, :56:43, :60:29, :72:22
+  end // always @(posedge)
+  `ifndef SYNTHESIS
+    `ifdef FIRRTL_BEFORE_INITIAL
+      `FIRRTL_BEFORE_INITIAL
+    `endif
+    initial begin
+      automatic logic [31:0] _RANDOM_0;
+      `ifdef INIT_RANDOM_PROLOG_
+        `INIT_RANDOM_PROLOG_
+      `endif
+      `ifdef RANDOMIZE_REG_INIT
+        _RANDOM_0 = `RANDOM;
+        stateReg = _RANDOM_0[0];	// TilelinkDevice.scala:17:27
+      `endif
+    end // initial
+    `ifdef FIRRTL_AFTER_INITIAL
+      `FIRRTL_AFTER_INITIAL
+    `endif
+  `endif
+  assign io_tlSlaveTransmitter_valid = _GEN_0;	// TilelinkDevice.scala:30:45, :41:28, :56:43
+  assign io_tlSlaveTransmitter_bits_d_data = _GEN_0 ? io_rspIn_bits_dataResponse : 32'h0;	// TilelinkDevice.scala:23:37, :30:45, :41:28, :56:43
+  assign io_reqOut_valid = ~stateReg & io_tlMasterReceiver_valid;	// TilelinkDevice.scala:17:27, :27:37, :41:{19,28}, :43:40
+  assign io_reqOut_bits_addrRequest = _GEN ? 32'h0 : io_tlMasterReceiver_bits_a_address;	// TilelinkDevice.scala:23:37, :41:28, :43:40
+  assign io_reqOut_bits_dataRequest = _GEN ? 32'h0 : io_tlMasterReceiver_bits_a_data;	// TilelinkDevice.scala:23:37, :24:37, :41:28, :43:40
+  assign io_reqOut_bits_activeByteLane = _GEN ? 4'h0 : io_tlMasterReceiver_bits_a_mask;	// TilelinkDevice.scala:23:37, :25:37, :41:28, :43:40
+  assign io_reqOut_bits_isWrite = ~stateReg & io_tlMasterReceiver_valid & (io_tlMasterReceiver_bits_a_opcode == 3'h0 |
+                io_tlMasterReceiver_bits_a_opcode == 3'h1);	// TilelinkDevice.scala:17:27, :26:37, :41:{19,28}, :43:40, :48:{73,91,128}
 endmodule
 
-module WishboneAdapter_1(
+module TilelinkAdapter_1(
   input         clock,
                 reset,
                 io_reqIn_valid,
@@ -466,53 +437,49 @@ module WishboneAdapter_1(
   output [3:0]  io_reqOut_bits_activeByteLane,
   output        io_reqOut_bits_isWrite);
 
-  wire        _wbSlave_io_wbSlaveTransmitter_bits_ack;	// WishboneAdapter.scala:20:25
-  wire [31:0] _wbSlave_io_wbSlaveTransmitter_bits_dat;	// WishboneAdapter.scala:20:25
-  wire        _wbHost_io_wbMasterTransmitter_valid;	// WishboneAdapter.scala:19:24
-  wire        _wbHost_io_wbMasterTransmitter_bits_cyc;	// WishboneAdapter.scala:19:24
-  wire        _wbHost_io_wbMasterTransmitter_bits_stb;	// WishboneAdapter.scala:19:24
-  wire        _wbHost_io_wbMasterTransmitter_bits_we;	// WishboneAdapter.scala:19:24
-  wire [31:0] _wbHost_io_wbMasterTransmitter_bits_adr;	// WishboneAdapter.scala:19:24
-  wire [31:0] _wbHost_io_wbMasterTransmitter_bits_dat;	// WishboneAdapter.scala:19:24
-  wire [3:0]  _wbHost_io_wbMasterTransmitter_bits_sel;	// WishboneAdapter.scala:19:24
-  WishboneHost_1 wbHost (	// WishboneAdapter.scala:19:24
-    .clock                           (clock),
-    .reset                           (reset),
-    .io_wbSlaveReceiver_bits_ack     (_wbSlave_io_wbSlaveTransmitter_bits_ack),	// WishboneAdapter.scala:20:25
-    .io_wbSlaveReceiver_bits_dat     (_wbSlave_io_wbSlaveTransmitter_bits_dat),	// WishboneAdapter.scala:20:25
-    .io_reqIn_valid                  (io_reqIn_valid),
-    .io_reqIn_bits_addrRequest       (io_reqIn_bits_addrRequest),
-    .io_reqIn_bits_dataRequest       (io_reqIn_bits_dataRequest),
-    .io_reqIn_bits_activeByteLane    (io_reqIn_bits_activeByteLane),
-    .io_reqIn_bits_isWrite           (io_reqIn_bits_isWrite),
-    .io_wbMasterTransmitter_valid    (_wbHost_io_wbMasterTransmitter_valid),
-    .io_wbMasterTransmitter_bits_cyc (_wbHost_io_wbMasterTransmitter_bits_cyc),
-    .io_wbMasterTransmitter_bits_stb (_wbHost_io_wbMasterTransmitter_bits_stb),
-    .io_wbMasterTransmitter_bits_we  (_wbHost_io_wbMasterTransmitter_bits_we),
-    .io_wbMasterTransmitter_bits_adr (_wbHost_io_wbMasterTransmitter_bits_adr),
-    .io_wbMasterTransmitter_bits_dat (_wbHost_io_wbMasterTransmitter_bits_dat),
-    .io_wbMasterTransmitter_bits_sel (_wbHost_io_wbMasterTransmitter_bits_sel),
-    .io_reqIn_ready                  (io_reqIn_ready),
-    .io_rspOut_valid                 (io_rspOut_valid),
-    .io_rspOut_bits_dataResponse     (io_rspOut_bits_dataResponse)
+  wire        _tlSlave_io_tlSlaveTransmitter_valid;	// TilelinkAdapter.scala:19:25
+  wire [31:0] _tlSlave_io_tlSlaveTransmitter_bits_d_data;	// TilelinkAdapter.scala:19:25
+  wire        _tlHost_io_tlMasterTransmitter_valid;	// TilelinkAdapter.scala:18:24
+  wire [2:0]  _tlHost_io_tlMasterTransmitter_bits_a_opcode;	// TilelinkAdapter.scala:18:24
+  wire [31:0] _tlHost_io_tlMasterTransmitter_bits_a_address;	// TilelinkAdapter.scala:18:24
+  wire [3:0]  _tlHost_io_tlMasterTransmitter_bits_a_mask;	// TilelinkAdapter.scala:18:24
+  wire [31:0] _tlHost_io_tlMasterTransmitter_bits_a_data;	// TilelinkAdapter.scala:18:24
+  TilelinkHost_1 tlHost (	// TilelinkAdapter.scala:18:24
+    .clock                                 (clock),
+    .reset                                 (reset),
+    .io_tlSlaveReceiver_valid              (_tlSlave_io_tlSlaveTransmitter_valid),	// TilelinkAdapter.scala:19:25
+    .io_tlSlaveReceiver_bits_d_data        (_tlSlave_io_tlSlaveTransmitter_bits_d_data),	// TilelinkAdapter.scala:19:25
+    .io_reqIn_valid                        (io_reqIn_valid),
+    .io_reqIn_bits_addrRequest             (io_reqIn_bits_addrRequest),
+    .io_reqIn_bits_dataRequest             (io_reqIn_bits_dataRequest),
+    .io_reqIn_bits_activeByteLane          (io_reqIn_bits_activeByteLane),
+    .io_reqIn_bits_isWrite                 (io_reqIn_bits_isWrite),
+    .io_tlMasterTransmitter_valid          (_tlHost_io_tlMasterTransmitter_valid),
+    .io_tlMasterTransmitter_bits_a_opcode  (_tlHost_io_tlMasterTransmitter_bits_a_opcode),
+    .io_tlMasterTransmitter_bits_a_address (_tlHost_io_tlMasterTransmitter_bits_a_address),
+    .io_tlMasterTransmitter_bits_a_mask    (_tlHost_io_tlMasterTransmitter_bits_a_mask),
+    .io_tlMasterTransmitter_bits_a_data    (_tlHost_io_tlMasterTransmitter_bits_a_data),
+    .io_reqIn_ready                        (io_reqIn_ready),
+    .io_rspOut_valid                       (io_rspOut_valid),
+    .io_rspOut_bits_dataResponse           (io_rspOut_bits_dataResponse)
   );
-  WishboneDevice_1 wbSlave (	// WishboneAdapter.scala:20:25
-    .io_wbMasterReceiver_valid      (_wbHost_io_wbMasterTransmitter_valid),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_cyc   (_wbHost_io_wbMasterTransmitter_bits_cyc),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_stb   (_wbHost_io_wbMasterTransmitter_bits_stb),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_we    (_wbHost_io_wbMasterTransmitter_bits_we),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_adr   (_wbHost_io_wbMasterTransmitter_bits_adr),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_dat   (_wbHost_io_wbMasterTransmitter_bits_dat),	// WishboneAdapter.scala:19:24
-    .io_wbMasterReceiver_bits_sel   (_wbHost_io_wbMasterTransmitter_bits_sel),	// WishboneAdapter.scala:19:24
-    .io_rspIn_valid                 (io_rspIn_valid),
-    .io_rspIn_bits_dataResponse     (io_rspIn_bits_dataResponse),
-    .io_wbSlaveTransmitter_bits_ack (_wbSlave_io_wbSlaveTransmitter_bits_ack),
-    .io_wbSlaveTransmitter_bits_dat (_wbSlave_io_wbSlaveTransmitter_bits_dat),
-    .io_reqOut_valid                (io_reqOut_valid),
-    .io_reqOut_bits_addrRequest     (io_reqOut_bits_addrRequest),
-    .io_reqOut_bits_dataRequest     (io_reqOut_bits_dataRequest),
-    .io_reqOut_bits_activeByteLane  (io_reqOut_bits_activeByteLane),
-    .io_reqOut_bits_isWrite         (io_reqOut_bits_isWrite)
+  TilelinkDevice_1 tlSlave (	// TilelinkAdapter.scala:19:25
+    .clock                              (clock),
+    .reset                              (reset),
+    .io_tlMasterReceiver_valid          (_tlHost_io_tlMasterTransmitter_valid),	// TilelinkAdapter.scala:18:24
+    .io_tlMasterReceiver_bits_a_opcode  (_tlHost_io_tlMasterTransmitter_bits_a_opcode),	// TilelinkAdapter.scala:18:24
+    .io_tlMasterReceiver_bits_a_address (_tlHost_io_tlMasterTransmitter_bits_a_address),	// TilelinkAdapter.scala:18:24
+    .io_tlMasterReceiver_bits_a_mask    (_tlHost_io_tlMasterTransmitter_bits_a_mask),	// TilelinkAdapter.scala:18:24
+    .io_tlMasterReceiver_bits_a_data    (_tlHost_io_tlMasterTransmitter_bits_a_data),	// TilelinkAdapter.scala:18:24
+    .io_rspIn_valid                     (io_rspIn_valid),
+    .io_rspIn_bits_dataResponse         (io_rspIn_bits_dataResponse),
+    .io_tlSlaveTransmitter_valid        (_tlSlave_io_tlSlaveTransmitter_valid),
+    .io_tlSlaveTransmitter_bits_d_data  (_tlSlave_io_tlSlaveTransmitter_bits_d_data),
+    .io_reqOut_valid                    (io_reqOut_valid),
+    .io_reqOut_bits_addrRequest         (io_reqOut_bits_addrRequest),
+    .io_reqOut_bits_dataRequest         (io_reqOut_bits_dataRequest),
+    .io_reqOut_bits_activeByteLane      (io_reqOut_bits_activeByteLane),
+    .io_reqOut_bits_isWrite             (io_reqOut_bits_isWrite)
   );
 endmodule
 
@@ -521,6 +488,7 @@ module BlockRamWithoutMasking(
                 reset,
                 io_req_valid,
   input  [31:0] io_req_bits_addrRequest,
+  input         io_req_bits_isWrite,
   output        io_rsp_valid,
   output [31:0] io_rsp_bits_dataResponse,
   output        io_rsp_bits_error);
@@ -529,13 +497,15 @@ module BlockRamWithoutMasking(
   reg         validReg;	// BlockRam.scala:72:25
   reg         errReg;	// BlockRam.scala:73:23
   wire [31:0] _GEN = io_req_bits_addrRequest / 32'h4;	// BlockRam.scala:79:65
+  wire        _T_2 = io_req_valid & ~io_req_bits_isWrite;	// BlockRam.scala:88:{22,25}
+  wire        _T_4 = io_req_valid & io_req_bits_isWrite;	// BlockRam.scala:92:29
   always @(posedge clock) begin
     if (reset) begin
       validReg <= 1'h0;	// BlockRam.scala:72:25
       errReg <= 1'h0;	// BlockRam.scala:73:23
     end
     else begin
-      validReg <= io_req_valid;	// BlockRam.scala:72:25
+      validReg <= _T_2 | _T_4;	// BlockRam.scala:72:25, :88:{22,47}, :91:14, :92:{29,53}
       errReg <= io_req_valid & |(io_req_bits_addrRequest[1:0]) | io_req_valid & _GEN > 32'h3FE;	// BlockRam.scala:73:23, :78:{24,63,72}, :79:{25,65,71}, :81:28
     end
   end // always @(posedge)
@@ -560,16 +530,16 @@ module BlockRamWithoutMasking(
   `endif
   mem_combMem mem_ext (	// BlockRam.scala:82:24
     .R0_addr (_GEN[9:0]),	// BlockRam.scala:79:65, :90:41
-    .R0_en   (io_req_valid),
+    .R0_en   (_T_2),	// BlockRam.scala:88:22
     .R0_clk  (clock),
     .W0_addr (_GEN[9:0]),	// BlockRam.scala:79:65
-    .W0_en   (1'h0),
+    .W0_en   (~_T_2 & _T_4),	// BlockRam.scala:82:24, :88:{22,47}, :92:{29,53}
     .W0_clk  (clock),
     .W0_data (32'h0),
     .R0_data (_mem_ext_R0_data)
   );
   assign io_rsp_valid = validReg;	// BlockRam.scala:72:25
-  assign io_rsp_bits_dataResponse = io_req_valid ? _mem_ext_R0_data : 32'h0;	// BlockRam.scala:82:24, :88:47, :90:30, :92:53
+  assign io_rsp_bits_dataResponse = _T_2 ? _mem_ext_R0_data : 32'h0;	// BlockRam.scala:82:24, :88:{22,47}, :90:30, :92:53
   assign io_rsp_bits_error = errReg;	// BlockRam.scala:73:23
 endmodule
 
@@ -592,13 +562,13 @@ module BlockRamWithMasking(
   reg         validReg;	// BlockRam.scala:136:25
   wire        _T_2 = io_req_valid & ~io_req_bits_isWrite;	// BlockRam.scala:143:{22,25}
   wire [31:0] _GEN_0 = io_req_bits_addrRequest / 32'h4;	// BlockRam.scala:145:46
-  wire        _T_6 = io_req_valid & io_req_bits_isWrite;	// BlockRam.scala:147:29
-  assign _GEN = ~_T_2 & _T_6;	// BlockRam.scala:141:24, :143:{22,47}, :147:{29,53}
+  wire        _T_7 = io_req_valid & io_req_bits_isWrite;	// BlockRam.scala:147:29
+  assign _GEN = ~_T_2 & _T_7;	// BlockRam.scala:141:24, :143:{22,47}, :147:{29,53}
   always @(posedge clock) begin
     if (reset)
       validReg <= 1'h0;	// BlockRam.scala:136:25
     else
-      validReg <= _T_2 | _T_6;	// BlockRam.scala:136:25, :143:{22,47}, :146:14, :147:{29,53}
+      validReg <= _T_2 | _T_7;	// BlockRam.scala:136:25, :143:{22,47}, :146:14, :147:{29,53}
   end // always @(posedge)
   `ifndef SYNTHESIS
     `ifdef FIRRTL_BEFORE_INITIAL
@@ -662,7 +632,7 @@ module BlockRamWithMasking(
   assign io_rsp_bits_dataResponse = {io_req_bits_activeByteLane[3] & _T_2 ? _mem_3_ext_R0_data : 8'h0,
                 io_req_bits_activeByteLane[2] & _T_2 ? _mem_2_ext_R0_data : 8'h0,
                 io_req_bits_activeByteLane[1] & _T_2 ? _mem_1_ext_R0_data : 8'h0,
-                io_req_bits_activeByteLane[0] & _T_2 ? _mem_0_ext_R0_data : 8'h0};	// BlockRam.scala:128:52, :141:24, :143:22, :147:53, :151:18, :154:18, :160:8, Cat.scala:30:58
+                io_req_bits_activeByteLane[0] & _T_2 ? _mem_0_ext_R0_data : 8'h0};	// BlockRam.scala:128:52, :141:24, :143:22, :147:53, :151:18, :154:18, :160:8, Cat.scala:31:58
 endmodule
 
 // external module BlackBoxIbexCore
@@ -672,61 +642,61 @@ module IbexJigsaw(
          reset,
   output io_pin);
 
-  wire        _ibex_instr_req_o;	// IbexJigsaw.scala:32:22
-  wire [31:0] _ibex_instr_addr_o;	// IbexJigsaw.scala:32:22
-  wire        _ibex_data_req_o;	// IbexJigsaw.scala:32:22
-  wire        _ibex_data_we_o;	// IbexJigsaw.scala:32:22
-  wire [3:0]  _ibex_data_be_o;	// IbexJigsaw.scala:32:22
-  wire [31:0] _ibex_data_addr_o;	// IbexJigsaw.scala:32:22
-  wire [31:0] _ibex_data_wdata_o;	// IbexJigsaw.scala:32:22
-  wire [6:0]  _ibex_data_wdata_intg_o;	// IbexJigsaw.scala:32:22
-  wire        _ibex_crash_dump_o;	// IbexJigsaw.scala:32:22
-  wire        _ibex_alert_minor_o;	// IbexJigsaw.scala:32:22
-  wire        _ibex_alert_major_o;	// IbexJigsaw.scala:32:22
-  wire        _data_mem_io_rsp_valid;	// IbexJigsaw.scala:22:27
-  wire [31:0] _data_mem_io_rsp_bits_dataResponse;	// IbexJigsaw.scala:22:27
-  wire        _instr_mem_io_rsp_valid;	// IbexJigsaw.scala:21:27
-  wire [31:0] _instr_mem_io_rsp_bits_dataResponse;	// IbexJigsaw.scala:21:27
-  wire        _instr_mem_io_rsp_bits_error;	// IbexJigsaw.scala:21:27
-  wire        _data_adapter_io_reqIn_ready;	// IbexJigsaw.scala:19:30
-  wire        _data_adapter_io_rspOut_valid;	// IbexJigsaw.scala:19:30
-  wire [31:0] _data_adapter_io_rspOut_bits_dataResponse;	// IbexJigsaw.scala:19:30
-  wire        _data_adapter_io_reqOut_valid;	// IbexJigsaw.scala:19:30
-  wire [31:0] _data_adapter_io_reqOut_bits_addrRequest;	// IbexJigsaw.scala:19:30
-  wire [31:0] _data_adapter_io_reqOut_bits_dataRequest;	// IbexJigsaw.scala:19:30
-  wire [3:0]  _data_adapter_io_reqOut_bits_activeByteLane;	// IbexJigsaw.scala:19:30
-  wire        _data_adapter_io_reqOut_bits_isWrite;	// IbexJigsaw.scala:19:30
-  wire        _instr_adapter_io_reqIn_ready;	// IbexJigsaw.scala:18:31
-  wire        _instr_adapter_io_rspOut_valid;	// IbexJigsaw.scala:18:31
-  wire [31:0] _instr_adapter_io_rspOut_bits_dataResponse;	// IbexJigsaw.scala:18:31
-  wire        _instr_adapter_io_rspOut_bits_error;	// IbexJigsaw.scala:18:31
-  wire        _instr_adapter_io_reqOut_valid;	// IbexJigsaw.scala:18:31
-  wire [31:0] _instr_adapter_io_reqOut_bits_addrRequest;	// IbexJigsaw.scala:18:31
-  WishboneAdapter instr_adapter (	// IbexJigsaw.scala:18:31
+  wire        _ibex_instr_req_o;	// IbexJigsaw.scala:33:22
+  wire [31:0] _ibex_instr_addr_o;	// IbexJigsaw.scala:33:22
+  wire        _ibex_data_req_o;	// IbexJigsaw.scala:33:22
+  wire        _ibex_data_we_o;	// IbexJigsaw.scala:33:22
+  wire [3:0]  _ibex_data_be_o;	// IbexJigsaw.scala:33:22
+  wire [31:0] _ibex_data_addr_o;	// IbexJigsaw.scala:33:22
+  wire [31:0] _ibex_data_wdata_o;	// IbexJigsaw.scala:33:22
+  wire        _ibex_alert_minor_o;	// IbexJigsaw.scala:33:22
+  wire        _ibex_alert_major_o;	// IbexJigsaw.scala:33:22
+  wire        _data_mem_io_rsp_valid;	// IbexJigsaw.scala:23:27
+  wire [31:0] _data_mem_io_rsp_bits_dataResponse;	// IbexJigsaw.scala:23:27
+  wire        _instr_mem_io_rsp_valid;	// IbexJigsaw.scala:22:27
+  wire [31:0] _instr_mem_io_rsp_bits_dataResponse;	// IbexJigsaw.scala:22:27
+  wire        _instr_mem_io_rsp_bits_error;	// IbexJigsaw.scala:22:27
+  wire        _data_adapter_io_reqIn_ready;	// IbexJigsaw.scala:20:30
+  wire        _data_adapter_io_rspOut_valid;	// IbexJigsaw.scala:20:30
+  wire [31:0] _data_adapter_io_rspOut_bits_dataResponse;	// IbexJigsaw.scala:20:30
+  wire        _data_adapter_io_reqOut_valid;	// IbexJigsaw.scala:20:30
+  wire [31:0] _data_adapter_io_reqOut_bits_addrRequest;	// IbexJigsaw.scala:20:30
+  wire [31:0] _data_adapter_io_reqOut_bits_dataRequest;	// IbexJigsaw.scala:20:30
+  wire [3:0]  _data_adapter_io_reqOut_bits_activeByteLane;	// IbexJigsaw.scala:20:30
+  wire        _data_adapter_io_reqOut_bits_isWrite;	// IbexJigsaw.scala:20:30
+  wire        _instr_adapter_io_reqIn_ready;	// IbexJigsaw.scala:19:31
+  wire        _instr_adapter_io_rspOut_valid;	// IbexJigsaw.scala:19:31
+  wire [31:0] _instr_adapter_io_rspOut_bits_dataResponse;	// IbexJigsaw.scala:19:31
+  wire        _instr_adapter_io_rspOut_bits_error;	// IbexJigsaw.scala:19:31
+  wire        _instr_adapter_io_reqOut_valid;	// IbexJigsaw.scala:19:31
+  wire [31:0] _instr_adapter_io_reqOut_bits_addrRequest;	// IbexJigsaw.scala:19:31
+  wire        _instr_adapter_io_reqOut_bits_isWrite;	// IbexJigsaw.scala:19:31
+  TilelinkAdapter instr_adapter (	// IbexJigsaw.scala:19:31
     .clock                       (clock),
     .reset                       (reset),
-    .io_reqIn_valid              (_ibex_instr_req_o),	// IbexJigsaw.scala:32:22
-    .io_reqIn_bits_addrRequest   (_ibex_instr_addr_o),	// IbexJigsaw.scala:32:22
-    .io_rspIn_valid              (_instr_mem_io_rsp_valid),	// IbexJigsaw.scala:21:27
-    .io_rspIn_bits_dataResponse  (_instr_mem_io_rsp_bits_dataResponse),	// IbexJigsaw.scala:21:27
-    .io_rspIn_bits_error         (_instr_mem_io_rsp_bits_error),	// IbexJigsaw.scala:21:27
+    .io_reqIn_valid              (_ibex_instr_req_o),	// IbexJigsaw.scala:33:22
+    .io_reqIn_bits_addrRequest   ({2'h0, _ibex_instr_addr_o[31:2]}),	// IbexJigsaw.scala:33:22, :45:{45,68}
+    .io_rspIn_valid              (_instr_mem_io_rsp_valid),	// IbexJigsaw.scala:22:27
+    .io_rspIn_bits_dataResponse  (_instr_mem_io_rsp_bits_dataResponse),	// IbexJigsaw.scala:22:27
+    .io_rspIn_bits_error         (_instr_mem_io_rsp_bits_error),	// IbexJigsaw.scala:22:27
     .io_reqIn_ready              (_instr_adapter_io_reqIn_ready),
     .io_rspOut_valid             (_instr_adapter_io_rspOut_valid),
     .io_rspOut_bits_dataResponse (_instr_adapter_io_rspOut_bits_dataResponse),
     .io_rspOut_bits_error        (_instr_adapter_io_rspOut_bits_error),
     .io_reqOut_valid             (_instr_adapter_io_reqOut_valid),
-    .io_reqOut_bits_addrRequest  (_instr_adapter_io_reqOut_bits_addrRequest)
+    .io_reqOut_bits_addrRequest  (_instr_adapter_io_reqOut_bits_addrRequest),
+    .io_reqOut_bits_isWrite      (_instr_adapter_io_reqOut_bits_isWrite)
   );
-  WishboneAdapter_1 data_adapter (	// IbexJigsaw.scala:19:30
+  TilelinkAdapter_1 data_adapter (	// IbexJigsaw.scala:20:30
     .clock                         (clock),
     .reset                         (reset),
-    .io_reqIn_valid                (_ibex_data_req_o),	// IbexJigsaw.scala:32:22
-    .io_reqIn_bits_addrRequest     (_ibex_data_addr_o),	// IbexJigsaw.scala:32:22
-    .io_reqIn_bits_dataRequest     (_ibex_data_wdata_o),	// IbexJigsaw.scala:32:22
-    .io_reqIn_bits_activeByteLane  (_ibex_data_be_o),	// IbexJigsaw.scala:32:22
-    .io_reqIn_bits_isWrite         (_ibex_data_we_o),	// IbexJigsaw.scala:32:22
-    .io_rspIn_valid                (_data_mem_io_rsp_valid),	// IbexJigsaw.scala:22:27
-    .io_rspIn_bits_dataResponse    (_data_mem_io_rsp_bits_dataResponse),	// IbexJigsaw.scala:22:27
+    .io_reqIn_valid                (_ibex_data_req_o),	// IbexJigsaw.scala:33:22
+    .io_reqIn_bits_addrRequest     (_ibex_data_addr_o),	// IbexJigsaw.scala:33:22
+    .io_reqIn_bits_dataRequest     (_ibex_data_wdata_o),	// IbexJigsaw.scala:33:22
+    .io_reqIn_bits_activeByteLane  (_ibex_data_be_o),	// IbexJigsaw.scala:33:22
+    .io_reqIn_bits_isWrite         (_ibex_data_we_o),	// IbexJigsaw.scala:33:22
+    .io_rspIn_valid                (_data_mem_io_rsp_valid),	// IbexJigsaw.scala:23:27
+    .io_rspIn_bits_dataResponse    (_data_mem_io_rsp_bits_dataResponse),	// IbexJigsaw.scala:23:27
     .io_reqIn_ready                (_data_adapter_io_reqIn_ready),
     .io_rspOut_valid               (_data_adapter_io_rspOut_valid),
     .io_rspOut_bits_dataResponse   (_data_adapter_io_rspOut_bits_dataResponse),
@@ -736,23 +706,24 @@ module IbexJigsaw(
     .io_reqOut_bits_activeByteLane (_data_adapter_io_reqOut_bits_activeByteLane),
     .io_reqOut_bits_isWrite        (_data_adapter_io_reqOut_bits_isWrite)
   );
-  BlockRamWithoutMasking instr_mem (	// IbexJigsaw.scala:21:27
+  BlockRamWithoutMasking instr_mem (	// IbexJigsaw.scala:22:27
     .clock                    (clock),
     .reset                    (reset),
-    .io_req_valid             (_instr_adapter_io_reqOut_valid),	// IbexJigsaw.scala:18:31
-    .io_req_bits_addrRequest  (_instr_adapter_io_reqOut_bits_addrRequest),	// IbexJigsaw.scala:18:31
+    .io_req_valid             (_instr_adapter_io_reqOut_valid),	// IbexJigsaw.scala:19:31
+    .io_req_bits_addrRequest  (_instr_adapter_io_reqOut_bits_addrRequest),	// IbexJigsaw.scala:19:31
+    .io_req_bits_isWrite      (_instr_adapter_io_reqOut_bits_isWrite),	// IbexJigsaw.scala:19:31
     .io_rsp_valid             (_instr_mem_io_rsp_valid),
     .io_rsp_bits_dataResponse (_instr_mem_io_rsp_bits_dataResponse),
     .io_rsp_bits_error        (_instr_mem_io_rsp_bits_error)
   );
-  BlockRamWithMasking data_mem (	// IbexJigsaw.scala:22:27
+  BlockRamWithMasking data_mem (	// IbexJigsaw.scala:23:27
     .clock                      (clock),
     .reset                      (reset),
-    .io_req_valid               (_data_adapter_io_reqOut_valid),	// IbexJigsaw.scala:19:30
-    .io_req_bits_addrRequest    (_data_adapter_io_reqOut_bits_addrRequest),	// IbexJigsaw.scala:19:30
-    .io_req_bits_dataRequest    (_data_adapter_io_reqOut_bits_dataRequest),	// IbexJigsaw.scala:19:30
-    .io_req_bits_activeByteLane (_data_adapter_io_reqOut_bits_activeByteLane),	// IbexJigsaw.scala:19:30
-    .io_req_bits_isWrite        (_data_adapter_io_reqOut_bits_isWrite),	// IbexJigsaw.scala:19:30
+    .io_req_valid               (_data_adapter_io_reqOut_valid),	// IbexJigsaw.scala:20:30
+    .io_req_bits_addrRequest    (_data_adapter_io_reqOut_bits_addrRequest),	// IbexJigsaw.scala:20:30
+    .io_req_bits_dataRequest    (_data_adapter_io_reqOut_bits_dataRequest),	// IbexJigsaw.scala:20:30
+    .io_req_bits_activeByteLane (_data_adapter_io_reqOut_bits_activeByteLane),	// IbexJigsaw.scala:20:30
+    .io_req_bits_isWrite        (_data_adapter_io_reqOut_bits_isWrite),	// IbexJigsaw.scala:20:30
     .io_rsp_valid               (_data_mem_io_rsp_valid),
     .io_rsp_bits_dataResponse   (_data_mem_io_rsp_bits_dataResponse)
   );
@@ -772,41 +743,37 @@ module IbexJigsaw(
     .DM_HALT_ADDR(437323776),
     .PMP_GRANULARITY(0),
     .RV32M("ibex_pkg::RV32MFast")
-  ) ibex (	// IbexJigsaw.scala:32:22
-    .clk_i              (clock),
-    .rst_ni             (reset),
-    .test_en_i          (1'h0),	// IbexJigsaw.scala:32:22
-    .hart_id_i          (32'h0),	// IbexJigsaw.scala:32:22
-    .instr_gnt_i        (_instr_adapter_io_reqIn_ready),	// IbexJigsaw.scala:18:31
-    .instr_rvalid_i     (_instr_adapter_io_rspOut_valid),	// IbexJigsaw.scala:18:31
-    .instr_rdata_i      (_instr_adapter_io_rspOut_bits_dataResponse),	// IbexJigsaw.scala:18:31
-    .instr_rdata_intg_i (7'h0),	// IbexJigsaw.scala:47:32
-    .instr_err_i        (_instr_adapter_io_rspOut_bits_error),	// IbexJigsaw.scala:18:31
-    .data_gnt_i         (_data_adapter_io_reqIn_ready),	// IbexJigsaw.scala:19:30
-    .data_rvalid_i      (_data_adapter_io_rspOut_valid),	// IbexJigsaw.scala:19:30
-    .data_rdata_i       (_data_adapter_io_rspOut_bits_dataResponse),	// IbexJigsaw.scala:19:30
-    .data_rdata_intg_i  (7'h0),	// IbexJigsaw.scala:47:32
-    .data_err_i         (1'h0),	// IbexJigsaw.scala:32:22
-    .irq_software_i     (1'h0),	// IbexJigsaw.scala:32:22
-    .irq_timer_i        (1'h0),	// IbexJigsaw.scala:32:22
-    .irq_external_i     (1'h0),	// IbexJigsaw.scala:32:22
-    .irq_fast_i         (15'h0),	// IbexJigsaw.scala:70:24
-    .irq_nm_i           (1'h0),	// IbexJigsaw.scala:32:22
-    .debug_req_i        (1'h0),	// IbexJigsaw.scala:32:22
-    .fetch_enable_i     (1'h1),	// IbexJigsaw.scala:32:22
-    .scan_rst_ni        (1'h1),	// IbexJigsaw.scala:32:22
-    .instr_req_o        (_ibex_instr_req_o),
-    .instr_addr_o       (_ibex_instr_addr_o),
-    .data_req_o         (_ibex_data_req_o),
-    .data_we_o          (_ibex_data_we_o),
-    .data_be_o          (_ibex_data_be_o),
-    .data_addr_o        (_ibex_data_addr_o),
-    .data_wdata_o       (_ibex_data_wdata_o),
-    .data_wdata_intg_o  (_ibex_data_wdata_intg_o),
-    .crash_dump_o       (_ibex_crash_dump_o),
-    .alert_minor_o      (_ibex_alert_minor_o),
-    .alert_major_o      (_ibex_alert_major_o),
-    .core_sleep_o       (io_pin)
+  ) ibex (	// IbexJigsaw.scala:33:22
+    .clk_i          (clock),
+    .rst_ni         (~reset),	// IbexJigsaw.scala:39:23
+    .test_en_i      (1'h1),	// IbexJigsaw.scala:33:22
+    .hart_id_i      (32'hF14),	// IbexJigsaw.scala:41:23
+    .instr_gnt_i    (_instr_adapter_io_reqIn_ready),	// IbexJigsaw.scala:19:31
+    .instr_rvalid_i (_instr_adapter_io_rspOut_valid),	// IbexJigsaw.scala:19:31
+    .instr_rdata_i  (_instr_adapter_io_rspOut_bits_dataResponse),	// IbexJigsaw.scala:19:31
+    .instr_err_i    (_instr_adapter_io_rspOut_bits_error),	// IbexJigsaw.scala:19:31
+    .data_gnt_i     (_data_adapter_io_reqIn_ready),	// IbexJigsaw.scala:20:30
+    .data_rvalid_i  (_data_adapter_io_rspOut_valid),	// IbexJigsaw.scala:20:30
+    .data_rdata_i   (_data_adapter_io_rspOut_bits_dataResponse),	// IbexJigsaw.scala:20:30
+    .data_err_i     (1'h0),	// IbexJigsaw.scala:33:22
+    .irq_software_i (1'h0),	// IbexJigsaw.scala:33:22
+    .irq_timer_i    (1'h0),	// IbexJigsaw.scala:33:22
+    .irq_external_i (1'h0),	// IbexJigsaw.scala:33:22
+    .irq_fast_i     (15'h0),	// IbexJigsaw.scala:75:24
+    .irq_nm_i       (1'h0),	// IbexJigsaw.scala:33:22
+    .debug_req_i    (1'h0),	// IbexJigsaw.scala:33:22
+    .fetch_enable_i (1'h1),	// IbexJigsaw.scala:33:22
+    .scan_rst_ni    (1'h1),	// IbexJigsaw.scala:33:22
+    .instr_req_o    (_ibex_instr_req_o),
+    .instr_addr_o   (_ibex_instr_addr_o),
+    .data_req_o     (_ibex_data_req_o),
+    .data_we_o      (_ibex_data_we_o),
+    .data_be_o      (_ibex_data_be_o),
+    .data_addr_o    (_ibex_data_addr_o),
+    .data_wdata_o   (_ibex_data_wdata_o),
+    .alert_minor_o  (_ibex_alert_minor_o),
+    .alert_major_o  (_ibex_alert_major_o),
+    .core_sleep_o   (io_pin)
   );
 endmodule
 
