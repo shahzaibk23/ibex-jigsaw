@@ -4,6 +4,11 @@ ThisBuild / organization     := "merledu"
 
 val chiselVersion = "3.5.1"
 
+lazy val caravan = (project in file("caravan"))
+
+lazy val jigsaw = (project in file("jigsaw")).dependsOn(caravan)
+
+
 lazy val root = (project in file("."))
   .settings(
     name := "ibex_jigsaw",
@@ -20,3 +25,4 @@ lazy val root = (project in file("."))
     ),
     addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % chiselVersion cross CrossVersion.full),
   )
+  .dependsOn(jigsaw, caravan)
