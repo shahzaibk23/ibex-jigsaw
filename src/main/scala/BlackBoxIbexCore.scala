@@ -35,11 +35,11 @@ class BlackBoxIbexCore(
     val rootDir     = System.getProperty("user.dir")
     val ibexSrcDir = s"$rootDir/src/main/resources/ibex_module"
 
-    val proc = s"make -C $ibexSrcDir default"
-    require (proc.! == 0, "Failed to run preprocessing step")
+    // val proc = s"make -C $ibexSrcDir default"
+    // require (proc.! == 0, "Failed to run preprocessing step")
 
     // generated from preprocessing step
-    addPath(s"$ibexSrcDir/blackBoxIbexCore.preprocessed.sv")
+    addPath(s"$ibexSrcDir/ibex/rtl/ibex_core.sv")
 }
 
 
