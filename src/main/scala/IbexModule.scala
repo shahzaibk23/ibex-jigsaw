@@ -13,9 +13,3 @@ class IbexModule extends Module{
 }
 
 
-
-object main extends App {
-  
-    (new ChiselStage).emitSystemVerilog(new IbexModule())
-
-}
