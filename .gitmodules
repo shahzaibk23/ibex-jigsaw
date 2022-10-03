@@ -1,3 +1,6 @@
 [submodule "src/main/resources/ibex_module/ibex"]
 	path = src/main/resources/ibex_module/ibex
 	url = https://github.com/lowRISC/ibexc
+[submodule "jigsaw"]
+	path = jigsaw
+	url = https://github.com/talha-ahmed-1/jigsaw/
