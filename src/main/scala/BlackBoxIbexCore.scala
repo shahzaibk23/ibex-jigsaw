@@ -39,7 +39,7 @@ class BlackBoxIbexCore(
     // require (proc.! == 0, "Failed to run preprocessing step")
 
     // generated from preprocessing step
-    addPath(s"$ibexSrcDir/ibex/rtl/ibex_core.sv")
+    addPath(s"$ibexSrcDir/ibex/rtl/ibex_top.sv")
 }
 
 
